@@ -1,4 +1,4 @@
-package api
+package main
 
 import (
 	"bufio"
@@ -111,7 +111,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path != "/v1/chat/completions" {
+	if r.URL.Path != "/hf/v1/chat/completions" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, `{"status":"GetMerlin2Api Service Running...","message":"MoLoveSze..."}`)
@@ -186,12 +186,24 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("Sec-Fetch-Mode", "cors")
 	req.Header.Set("Sec-Fetch-Dest", "empty")
 	req.Header.Set("host", "arcane.getmerlin.in")
+	var flusher http.Flusher
 	if openAIReq.Stream {
+		var ok bool
+		flusher, ok = w.(http.Flusher)
+		if !ok {
+			http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+			return
+		}
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
 		w.Header().Set("X-Accel-Buffering", "no")
 		w.Header().Set("Transfer-Encoding", "chunked")
+		defer func() {
+			if flusher != nil {
+				flusher.Flush()
+			}
+		}()
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 	}
@@ -297,11 +309,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 				respData, _ := json.Marshal(openAIResp)
 				fmt.Fprintf(w, "data: %s\n\n", string(respData))
+				flusher.Flush()
 			}
 		}
 	}
 
 	finalResp := OpenAIResponse{
+		Id:      generateUUID(),
+		Object:  "chat.completion.chunk",
+		Created: getCurrentTimestamp(),
+		Model:   openAIReq.Model,
 		Choices: []struct {
 			Delta struct {
 				Content string `json:"content"`
@@ -319,6 +336,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	respData, _ := json.Marshal(finalResp)
 	fmt.Fprintf(w, "data: %s\n\n", string(respData))
 	fmt.Fprintf(w, "data: [DONE]\n\n")
+	flusher.Flush()
 }
 
 func generateUUID() string {
@@ -332,4 +350,13 @@ func generateV1UUID() string {
 
 func getCurrentTimestamp() int64 {
 	return time.Now().Unix()
+}
+
+func main() {
+	port := getEnvOrDefault("PORT", "7860")
+	http.HandleFunc("/", Handler)
+	fmt.Printf("Server starting on port %s...\n", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		fmt.Printf("Error starting server: %v\n", err)
+	}
 }
