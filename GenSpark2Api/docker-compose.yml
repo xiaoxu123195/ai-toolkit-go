@@ -1,0 +1,15 @@
+version: '3.4'
+
+services:
+  genspark2api:
+    image: deanxv/genspark2api:latest
+    container_name: genspark2api
+    restart: always
+    ports:
+      - "7055:7055"
+    volumes:
+      - ./data:/app/genspark2api/data
+    environment:
+      - GS_COOKIE=i18n_set=zh-CN; ARRAffinity=bd8f901574957201325d6c62b2e38bf458016a2c968c9cc0b7ceaf90bc92e623; ARRAffinitySameSite=bd8f901574957201325d6c62b2e38bf458016a2c968c9cc0b7ceaf90bc92e623; _ga=GA1.1.1505165461.1738896703; ai_user=P1eVsPQGDpVRrO+7G9PCOg|2025-02-07T02:51:43.926Z; session_id=851cbb03-d8a8-4e62-b8c1-d9594a44b7a0; agree_terms=1; from_auth=; ai_session=3pW1im15Vng5FZCdwb0t7Y|1738896704033|1738896907702; c1=dbJ505biP9GQvR75OQaTyeBSHr8cHSXzYRo7WeStaFzUZ6axqUbjFGo7rNeSLnMgWbulzr0%2BllecOmUC1mrcaNHeJlgdFiQ7hE3gJJ2V7AUgvrnK; c2=xTzbvtWol%2FLZR4me; _ga_VL3SBJ0Y0F=GS1.1.1738896703.1.1.1738896952.14.0.0  # cookie (多个请以,分隔)
+      - API_SECRET=123456  # [可选]接口密钥-修改此行为请求头校验的值(多个请以,分隔)
+      - TZ=Asia/Shanghai
