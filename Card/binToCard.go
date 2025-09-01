@@ -158,7 +158,7 @@ func main() {
 	// 设置随机种子
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	// 示例：生成10张卡，BIN为"424242"，无固定有效期和CVV
-	cards, err := generateCard("423568", 5, "", "")
+	cards, err := generateCard("423568", 10, "", "")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
